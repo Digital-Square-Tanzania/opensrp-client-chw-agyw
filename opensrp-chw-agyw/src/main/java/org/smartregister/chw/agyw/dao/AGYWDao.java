@@ -2,6 +2,7 @@ package org.smartregister.chw.agyw.dao;
 
 import org.smartregister.agyw.R;
 import org.smartregister.chw.agyw.domain.MemberObject;
+import org.smartregister.chw.agyw.util.Constants;
 import org.smartregister.dao.AbstractDao;
 
 import java.text.SimpleDateFormat;
@@ -30,7 +31,7 @@ public class AGYWDao extends AbstractDao {
         DataMap<String> dataMap = cursor -> getCursorValue(cursor, "uic_id");
 
         List<String> res = readData(sql, dataMap);
-        if(res != null && res.size() != 0 && res.get(0)!= null){
+        if (res != null && res.size() != 0 && res.get(0) != null) {
             return res.get(0);
         }
         return "";
@@ -120,18 +121,26 @@ public class AGYWDao extends AbstractDao {
         return res.get(0);
     }
 
-    public static int getPackageStatus(String baseEntityId) {
-        //is primary package if client has been provided with 9 sbcc sessions, and has been given a referral for HTS in DREAMS
-        //TODO: complete the status check
-        String sql = "SELECT sbcc_intervention_provided FROM ec_agyw_register p " +
+    public static int getPackageStatus(String baseEntityId, int age) {
+        String sql = "SELECT sbcc_intervention_provided, economic_empowerment_education FROM ec_agyw_register p " +
                 "WHERE p.base_entity_id = '" + baseEntityId + "' AND p.is_closed = 0";
 
-        DataMap<String> dataMap = cursor -> getCursorValue(cursor, "sbcc_intervention_provided");
+        DataMap<String> behavioralDataMap = cursor -> getCursorValue(cursor, "sbcc_intervention_provided");
+        DataMap<String> structuralDataMap = cursor -> getCursorValue(cursor, "economic_empowerment_education");
 
-        List<String> res = readData(sql, dataMap);
-        if(res != null && res.size() > 0 && res.get(0) != null) {
-            if(res.get(0).contains(",")) {
-                if(res.get(0).trim().split(",").length >= 9){
+        List<String> behavioralRes = readData(sql, behavioralDataMap);
+        List<String> structuralRes = readData(sql, structuralDataMap);
+        if ((behavioralRes != null && behavioralRes.size() > 0 && behavioralRes.get(0) != null) && (structuralRes != null && structuralRes.size() > 0 && structuralRes.get(0) != null)) {
+            if (behavioralRes.get(0).contains(",") && structuralRes.get(0).contains(",")) {
+                if (age < 15 && (
+                        behavioralRes.get(0).trim().split(",").length >= Constants.DREAMS_PACKAGE.behavioral_services_10_14_keys.size() &&
+                                structuralRes.get(0).trim().split(",").length >= Constants.DREAMS_PACKAGE.structural_services_10_14_keys.size())
+                ) {
+                    return R.string.primary_package_label;
+                } else if (age >= 15 && (
+                        behavioralRes.get(0).trim().split(",").length >= Constants.DREAMS_PACKAGE.behavioral_services_15_24_keys.size() &&
+                                structuralRes.get(0).trim().split(",").length >= Constants.DREAMS_PACKAGE.structural_services_15_24_keys.size())
+                ) {
                     return R.string.primary_package_label;
                 }
             }
@@ -140,9 +149,9 @@ public class AGYWDao extends AbstractDao {
         return 0;
     }
 
-    public static boolean isEligibleToGraduateServices(String baseEntityId) {
+    public static boolean isEligibleToGraduateServices(String baseEntityId, int age) {
         //is eligible to graduate if package status != 0
-        return getPackageStatus(baseEntityId) != 0;
+        return getPackageStatus(baseEntityId, age) != 0;
     }
 
     public static String getEnrolledProgram(String baseEntityId) {
@@ -152,7 +161,7 @@ public class AGYWDao extends AbstractDao {
         DataMap<String> dataMap = cursor -> getCursorValue(cursor, "program_name");
 
         List<String> res = readData(sql, dataMap);
-        if(res != null && res.size() != 0 && res.get(0)!= null){
+        if (res != null && res.size() != 0 && res.get(0) != null) {
             return res.get(0);
         }
         return "";

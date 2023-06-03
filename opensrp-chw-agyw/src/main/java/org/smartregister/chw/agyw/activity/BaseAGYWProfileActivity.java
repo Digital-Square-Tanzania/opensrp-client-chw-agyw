@@ -166,8 +166,20 @@ public class BaseAGYWProfileActivity extends BaseProfileActivity implements AGYW
         showUICID(memberObject.getBaseEntityId());
     }
 
+    @Override
+    protected void onResumption() {
+        super.onResumption();
+        setupViews();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setupViews();
+    }
+
     public void initializeGraduateServicesView() {
-        boolean isEligibleToGraduate = AGYWDao.isEligibleToGraduateServices(memberObject.getBaseEntityId());
+        boolean isEligibleToGraduate = AGYWDao.isEligibleToGraduateServices(memberObject.getBaseEntityId(), memberObject.getAge());
         if (isEligibleToGraduate) {
             textview_graduate.setVisibility(View.VISIBLE);
         } else {
@@ -184,7 +196,7 @@ public class BaseAGYWProfileActivity extends BaseProfileActivity implements AGYW
     }
 
     protected String getAGYWPackageStatus() {
-        int status_id = AGYWDao.getPackageStatus(memberObject.getBaseEntityId());
+        int status_id = AGYWDao.getPackageStatus(memberObject.getBaseEntityId(), memberObject.getAge());
         if (status_id != 0)
             return getResources().getString(status_id);
         return "";
